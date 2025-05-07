@@ -1,0 +1,109 @@
+---
+title: "Contingency tables and chisq tests"
+author: "Wing-Ho Ko"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+### Contingency tables
+
+#### Converting data to contingency table
+
+```{r}
+gss_sim <- gss_cat |> 
+  filter(year==2014 & race != "Not Applicable" & marital != "No answer") |> 
+  mutate(
+    marital = marital |> fct_recode("Never" = "Never married") |>
+      fct_drop("No answer"),
+    race = fct_drop(race, "Not applicable")
+  )
+```
+
+
+```{r}
+glimpse(gss_sim)
+```
+
+Creates cross tabs using `table()`
+
+```{r}
+table(gss_sim$race, gss_sim$marital)
+```
+
+Do the same using xtabs, which has a formula interface
+
+```{r}
+xtabs(~ race + marital, gss_sim)
+```
+
+Suppose we start with count data already:
+
+```{r}
+gss_summary <- gss_sim |> group_by(race, marital) |> count() |> ungroup()
+glimpse(gss_summary)
+```
+
+In which case the `xtab` function can still be used to produce crosstab, but the formula has to include the column of count on the LHS
+
+```{r}
+xtabs(n ~ race + marital, gss_summary)
+```
+
+#### Adding marginal counts; convert to frequency table
+
+Save the previous generated crosstab into a variable
+
+```{r}
+gss_xtab2 <- xtabs(n ~ race + marital, gss_summary)
+```
+
+Create a crosstab with marginal counts
+
+```{r}
+addmargins(gss_xtab2)
+```
+
+Convert the crosstabs of count into crosstab of frequency
+
+```{r}
+proportions(gss_xtab2)
+```
+
+### Chi-square goodness-of-fit test
+
+Construct the count for the race of respondents:
+
+```{r}
+gss_xtab1 <- xtabs(~ race, gss_sim)
+print(gss_xtab1)
+```
+
+We'll check if the proportion of respondents from this sample is representative of the race proportion found in the the 2020 census, where 71.0% of people report to be White (alone or in combination), and 14.2% of people report to be Black (alone or in combination):
+
+```{r}
+race_census <- c(0.148, 0.142, 0.710)
+chisq.test(gss_xtab1, p = race_census, rescale.p = TRUE)
+```
+
+### Pearson's Chi-square test
+
+Return to the two-dimensional crosstab previously computed
+
+```{r}
+gss_xtab2
+```
+
+We'll now check if there's any interaction between race and martial status:
+
+```{r}
+chisq.test(gss_xtab2)
+```
+
+Since the p value is small, we conclude that there are interactions between race and martial status.

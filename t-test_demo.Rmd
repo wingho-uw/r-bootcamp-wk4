@@ -1,0 +1,186 @@
+---
+title: "t-test demo"
+author: "Wing-Ho Ko"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(effectsize)
+```
+
+
+## t-test demos
+
+### Orca example (simulated data)
+
+Suppose we have tagged 25 orcas in the Washington shore and we recorded their weights one year apart. The data is stored in the `orca_data.csv` file in the data folder
+
+Perform the appropriate t-test to check if there’s discernible difference between the weights of orcas between the two measurement
+
+**t-test to perform**: the observations are paired. Thus a paired t-test is needed
+
+Load the data and inspect it
+
+```{r}
+orcas <- read_csv("data/orca_simulated.csv")
+glimpse(orcas)
+```
+
+Subset data that can be used as input to t.test()
+
+```{r}
+orcas_1 <- orcas |> filter(year==2023) |> arrange(tag)
+orcas_2 <- orcas |> filter(year==2024) |> arrange(tag)
+
+orcas_wt_1 <- orcas_1$weight_kg
+orcas_wt_2 <- orcas_2$weight_kg
+```
+
+Perform t.test. Defaulted to printing out the results
+
+```{r}
+t.test(orcas_wt_2, orcas_wt_1, alternative="two.sided", paired=TRUE)
+```
+
+Assign the `t.test()` results to variable. Extract the p-value programatically:
+
+```{r}
+orcas_t <- t.test(orcas_wt_2, orcas_wt_1, alternative="two.sided", paired=TRUE)
+```
+
+Extract the p-value programatically:
+
+```{r}
+print(orcas_t$p.value)
+```
+
+Extract the point estimate and confidence interval programatically:
+
+```{r}
+print(orcas_t$estimate)
+```
+
+```{r}
+print(orcas_t$conf.int)
+```
+
+## t-test revisited
+
+Run different t-tests against the orca data
+
+```{r}
+orcas_t1 <- t.test(orcas_wt_2, orcas_wt_1, alternative="two.sided", paired=TRUE)
+orcas_t2 <- t.test(orcas_wt_2, orcas_wt_1, alternative="two.sided", var.equal=TRUE)
+orcas_t3 <- t.test(orcas_wt_2, orcas_wt_1, alternative="two.sided")
+```
+
+Print the different p-values obtained. Observed that p-values become worse with paired vs (unpaired pooled) vs (unpaired unpooled)
+
+```{r}
+print(c(orcas_t1$p.value, orcas_t2$p.value, orcas_t3$p.value))
+```
+
+### Statistical power
+
+Check the statistical power assuming that the difference is "real"
+
+```{r}
+orcas_diff <- mean(orcas_wt_1) - mean(orcas_wt_2)
+orcas_diff_sd <- sd(orcas_wt_1 - orcas_wt_2)
+
+power.t.test(n=20, delta=orcas_diff, sd=orcas_diff_sd, sig.level=0.05, type="paired")
+```
+
+If instead we use an unpaired, pooled t-test:
+
+```{r}
+orcas_diff <- mean(orcas_wt_1) - mean(orcas_wt_2)
+orcas_sd <- sqrt(0.5  * (sd(orcas_wt_1)^2 + sd(orcas_wt_2)^2))
+
+power.t.test(n=20, delta=orcas_diff, sd=orcas_sd, sig.level=0.05)
+```
+
+Asking the question differently: how big does `n` needs to be for power = 0.80?
+
+```{r}
+power.t.test(
+  power=0.80, delta=orcas_diff, sd=orcas_diff_sd, sig.level=0.05, 
+  type="paired"
+)
+```
+
+### Shapiro-Wilk test for normality
+
+Use the water temperature data from Port Townsend buoy, year 2015 and 2024
+
+```{r}
+PT2015 <- read_csv("data/Port_Townsend_buoy_2015.csv")
+PT2024 <- read_csv("data/Port_Townsend_buoy_2024.csv")
+```
+
+Check if either temperature data is normally distributed
+
+```{r}
+shapiro.test(PT2015$WTMP)
+```
+
+```{r}
+shapiro.test(PT2024$WTMP)
+```
+
+So we shouldn't use t test to compare the two.
+
+However, if we focus only on June,
+
+```{r}
+PT2015_06 <- filter(PT2015, month(date)==6)
+shapiro.test(PT2015_06$WTMP)
+```
+
+```{r}
+PT2024_06 <- filter(PT2024, month(date)==6)
+shapiro.test(PT2024_06$WTMP)
+```
+
+Then it may be appropriate to perform t-test as comparison.
+
+### F test for equal variance
+
+Now we check if the June data from the two years have roughly the same variance
+
+```{r}
+var.test(PT2024_06$WTMP, PT2015_06$WTMP)
+```
+
+So using should use Welch's t-test
+
+### Effect size
+
+Now compare the 2020 and 2024 June data using t-test
+
+```{r}
+t.test(PT2024_06$WTMP, PT2015_06$WTMP)
+```
+
+So the difference is statistically discernible. Is it realistically important?
+
+```{r}
+cohens_d(PT2024_06$WTMP, PT2015_06$WTMP, pooled=FALSE)
+```
+
+We have a cohen's d that is between 1 and 2, so it the difference is important in real terms
+
+### Wilcoxon test
+
+Now go back to the year-long data. We'll need to use the Wilcoxon test instead:
+
+```{r}
+wilcox.test(PT2015$WTMP, PT2024$WTMP)
+```
+
+So the change in mean sea temperature is statistically significant.
