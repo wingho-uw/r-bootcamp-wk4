@@ -123,6 +123,11 @@ PT2015 <- read_csv("data/Port_Townsend_buoy_2015.csv")
 PT2024 <- read_csv("data/Port_Townsend_buoy_2024.csv")
 ```
 
+```{r}
+PT2024
+```
+
+
 Check if either temperature data is normally distributed
 
 ```{r}

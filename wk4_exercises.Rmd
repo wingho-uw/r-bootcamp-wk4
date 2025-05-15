@@ -18,7 +18,7 @@ library(palmerpenguins)
 
 ### Concept check 1
 
-1. Suppose you reject the null hypothesis in a one-tailed test. Will you reject the corresponding null hypothesis in a two-tailed test, at the same significance level α?
+1. Suppose you reject the null hypothesis in a two-tailed test. Will you reject the corresponding null hypothesis in a one-tailed test, at the same significance level α?
 
 2. You are trying to determine if there’s real difference in the mean between two populations A and B. Suppose the difference is real, by increasing the sample size, would you expect…
 
@@ -28,7 +28,7 @@ library(palmerpenguins)
 
 ### Exercise 2
 
-Data on seawater at near-surface depth (d < 5 m) were taken at 3 different locations in the Salish Sea. The data can be found in the file "salish_cruise_simulated_1.csv". Perform an appropriate t-test on the difference in mean salinity between the Admiralty Inset samples and the Main Basin samples
+Data on seawater at near-surface depth (d < 5 m) were taken at 3 different locations in the Salish Sea. The data can be found in the file "salish_cruise_simulated_1.csv". Perform an appropriate t-test on the difference in mean salinity between the Tacoma Narrows samples and the Main Basin samples
 
 ### Exercise 3
 
